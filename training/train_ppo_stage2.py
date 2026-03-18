@@ -73,7 +73,7 @@ LOG_EVERY = 500
 SAVE_EVERY = 5000
 
 # ── visualisation (headless-safe) ──
-GUI = True            # set True if you have a display
+GUI = False            # set True if you have a display
 RENDER_EVERY = 50
 PAUSE = 0.02
 
