@@ -24,7 +24,7 @@ mean on top of its existing skills.
 
 Two training phases, run sequentially:
     Phase A — Static traps (fixed per episode) + traffic cars.
-    Phase B — Dynamic traps (teleport every 15 steps) + traffic cars.
+    Phase B — Dynamic traps (teleport every 50 steps) + traffic cars.
 
 Produces:
     checkpoints/stage2_phaseA_final.pt
@@ -62,18 +62,18 @@ MAX_STEPS = 200
 STAGE1_CHECKPOINT = "checkpoints/ppo_final.pt"
 
 # Phase A — static traps
-PHASE_A_EPISODES = 2000
+PHASE_A_EPISODES = 100000
 
 # Phase B — dynamic traps (continues from Phase A)
-PHASE_B_EPISODES = 2000
+PHASE_B_EPISODES = 100000
 
-EVAL_EVERY = 50
+EVAL_EVERY = 500
 EVAL_EPISODES = 10
-LOG_EVERY = 50
-SAVE_EVERY = 500
+LOG_EVERY = 500
+SAVE_EVERY = 5000
 
 # ── visualisation (headless-safe) ──
-GUI = False            # set True if you have a display
+GUI = True            # set True if you have a display
 RENDER_EVERY = 50
 PAUSE = 0.02
 

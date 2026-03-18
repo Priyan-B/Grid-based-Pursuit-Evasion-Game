@@ -32,15 +32,15 @@ SEED = 42
 GRID_SIZE = 15
 MAX_STEPS = 200         # max steps per episode
 
-TOTAL_EPISODES = 3000   # total training episodes
-EVAL_EVERY = 50         # run greedy eval every N episodes
+TOTAL_EPISODES = 100000   # total training episodes
+EVAL_EVERY = 500         # run greedy eval every N episodes
 EVAL_EPISODES = 10      # how many greedy episodes per eval
-LOG_EVERY = 50          # print metrics every N episodes
-SAVE_EVERY = 500        # checkpoint every N episodes
+LOG_EVERY = 500          # print metrics every N episodes
+SAVE_EVERY = 5000        # checkpoint every N episodes
 
 # ---- visualisation control ----
 # Master toggle for GUI rendering. Set False for headless/faster training.
-GUI = True
+GUI = False
 # Show the agent moving live every RENDER_EVERY episodes.
 # Set to 1 to watch every episode (slow), 10-50 for a good balance.
 RENDER_EVERY = 50
