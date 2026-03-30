@@ -10,14 +10,6 @@ __pycache__/
 venv/
 ENV/
 
-# ─── Checkpoints and data (large binary files) ───
-*.pt
-*.pkl
-checkpoints/
-logs/*.csv
-logs/*.png
-logs/*.pkl
-
 # ─── Packaging / build artifacts ───
 build/
 dist/
