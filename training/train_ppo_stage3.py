@@ -44,11 +44,11 @@ MAX_STEPS = 200
 
 STAGE2_CHECKPOINT = "checkpoints/stage2_phaseB_final.pt"
 
-TOTAL_EPISODES = 100000
+TOTAL_EPISODES = 200000
 
-EVAL_EVERY = 500
-EVAL_EPISODES = 10
-LOG_EVERY = 500
+EVAL_EVERY = 5000
+EVAL_EPISODES = 5
+LOG_EVERY = 5000
 SAVE_EVERY = 10000
 
 GUI = False
@@ -63,9 +63,9 @@ PPO_CFG = dict(
     gamma=0.99,
     gae_lambda=0.95,
     vf_coef=0.5,
-    vf_clip=10.0,
-    ent_coef=0.02,
-    ent_coef_end=0.001,
+    vf_clip=3.0,
+    ent_coef=0.05,
+    ent_coef_end=0.02,
     max_grad_norm=0.5,
     n_epochs=4,
     batch_size=64,
