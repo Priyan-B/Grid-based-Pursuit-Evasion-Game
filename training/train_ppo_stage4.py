@@ -37,7 +37,7 @@ MAX_STEPS = 200
 THIEF_CHECKPOINT = "checkpoints/stage3_final.pt"
 THIEF_OBS_DIM = 40    # stage 3 observation size
 
-TOTAL_EPISODES = 100000
+TOTAL_EPISODES = 500000
 
 EVAL_EVERY = 5000
 EVAL_EPISODES = 10
