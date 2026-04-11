@@ -39,9 +39,9 @@ THIEF_OBS_DIM = 40    # stage 3 observation size
 
 TOTAL_EPISODES = 100000
 
-EVAL_EVERY = 500
+EVAL_EVERY = 5000
 EVAL_EPISODES = 10
-LOG_EVERY = 500
+LOG_EVERY = 5000
 SAVE_EVERY = 10000
 
 GUI = False
@@ -57,9 +57,9 @@ POLICE_PPO_CFG = dict(
     gamma=0.99,
     gae_lambda=0.95,
     vf_coef=0.5,
-    vf_clip=10.0,
+    vf_clip=3.0,
     ent_coef=0.05,       # more exploration — police start clueless
-    ent_coef_end=0.005,
+    ent_coef_end=0.02,
     max_grad_norm=0.5,
     n_epochs=4,
     batch_size=64,
