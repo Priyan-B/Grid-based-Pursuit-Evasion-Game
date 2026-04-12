@@ -42,7 +42,7 @@ THIEF_CHECKPOINT = "checkpoints/stage3_final.pt"
 POLICE0_CHECKPOINT = "checkpoints/stage4_police0_final.pt"
 POLICE1_CHECKPOINT = "checkpoints/stage4_police1_final.pt"
 
-TOTAL_EPISODES = 500000
+TOTAL_EPISODES = 200000
 
 EVAL_EVERY = 5000
 EVAL_EPISODES = 5
@@ -69,8 +69,8 @@ THIEF_PPO_CFG = dict(
     n_epochs=4,
     batch_size=64,
     min_batch_size=8,
-    lr=1e-4,          # lower LR — fine-tuning, not learning from scratch
-    lr_end=1e-5,
+    lr=5e-5,          # lower LR — fine-tuning, not learning from scratch
+    lr_end=5e-6,
 )
 
 # Police PPO config — same as stage 4
