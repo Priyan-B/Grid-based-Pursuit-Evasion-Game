@@ -14,7 +14,7 @@ Step order each tick:
     7. Caught check #2 — thief walked into police
     8. Trap / traffic / goal / timeout checks
 
-Police observation (235-dim):
+Police observation (244-dim):
     [0:225]   — full 15×15 grid flattened (wall=1, road=0)
     [225:227] — own position normalised (row/size, col/size)
     [227:229] — goal position normalised
@@ -22,6 +22,7 @@ Police observation (235-dim):
     [231]     — has_sighting flag (0 or 1)
     [232]     — sighting staleness normalised (steps_ago / max_steps)
     [233:235] — relative position to teammate normalised (dr/size, dc/size)
+    [235:244] — 3×3 local thief detection (1.0 if thief in cell, else 0.0)
 
 Police actions: 5  (up, down, left, right, stay)
 Police walk through traps and traffic — only walls block them.
@@ -69,7 +70,7 @@ class GridWorldStage4:
         step(police_actions)   → list of 2 obs, list of 2 rewards, done
     """
 
-    POLICE_OBS_DIM = 235   # 225 + 2 + 2 + 2 + 1 + 1 + 2
+    POLICE_OBS_DIM = 244   # 225 + 2 + 2 + 2 + 1 + 1 + 2 + 9 (local vision)
 
     def __init__(self, thief_policy, size=15, max_steps=200, rng_seed=42,
                  n_traps=N_TRAPS, n_traffic=N_TRAFFIC,
@@ -302,11 +303,11 @@ class GridWorldStage4:
             logits, _ = self.thief_policy(state_t)
         return logits.argmax(dim=-1).item()
 
-    # ─────────────── police observation (235-dim) ─────────────
+    # ─────────────── police observation (244-dim) ─────────────
 
     def get_police_state(self, police_idx):
         """
-        235-dim observation for one police agent:
+        244-dim observation for one police agent:
             [0:225]   full grid (wall=1, road=0)
             [225:227] own position normalised
             [227:229] goal position normalised
@@ -314,6 +315,7 @@ class GridWorldStage4:
             [231]     has_sighting flag
             [232]     sighting staleness normalised
             [233:235] relative position to teammate
+            [235:244] 3×3 local thief detection
         """
         own_pos = self.police_positions[police_idx]
         own_norm = np.array(
@@ -344,6 +346,17 @@ class GridWorldStage4:
             (teammate_pos[1] - own_pos[1]) / self.size,
         ], dtype=np.float32)
 
+        # 3×3 local thief detection — can the police SEE the thief nearby?
+        pr, pc = own_pos
+        thief_local = np.zeros(9, dtype=np.float32)
+        idx = 0
+        for dr in range(-1, 2):
+            for dc in range(-1, 2):
+                r, c = pr + dr, pc + dc
+                if (r, c) == self.agent_pos:
+                    thief_local[idx] = 1.0
+                idx += 1
+
         return np.concatenate([
             self.grid_flat,     # 225
             own_norm,           # 2
@@ -352,6 +365,7 @@ class GridWorldStage4:
             has_sighting,       # 1
             staleness,          # 1
             rel_teammate,       # 2
+            thief_local,        # 9
         ])
 
     # ─────────────────────── reset / step ──────────────────
