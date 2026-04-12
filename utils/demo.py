@@ -79,6 +79,11 @@ def make_env(stage, grid_size=15, max_steps=200, rng_seed=42,
             thief_policy=thief_policy,
             size=grid_size, max_steps=max_steps, rng_seed=rng_seed,
         )
+    elif stage == 5:
+        from env.grid_world_stage5 import GridWorldStage5
+        return GridWorldStage5(
+            size=grid_size, max_steps=max_steps, rng_seed=rng_seed,
+        )
     else:
         raise ValueError(f"Unknown stage: {stage}")
 
@@ -91,8 +96,8 @@ def get_show_fn(stage):
     elif stage == 2:
         from utils.visualize_stage2 import show_grid_s2, reset_view_s2
         return show_grid_s2, reset_view_s2
-    elif stage in (3, 4):
-        # Stage 4 reuses stage 3 visualiser
+    elif stage in (3, 4, 5):
+        # Stages 4 and 5 reuse stage 3 visualiser
         from utils.visualize_stage3 import show_grid_s3, reset_view_s3
         return show_grid_s3, reset_view_s3
     else:
@@ -135,6 +140,19 @@ def render_frame(stage, env, show_fn, path, ep, info_str, pause):
             pause=pause,
         )
     elif stage == 4:
+        traffic_pos = [car.pos for car in env.traffic_cars]
+        show_fn(
+            env.render(), env.goal,
+            agent_pos=env.agent_pos,
+            path=path,
+            traps=env.traps,
+            traffic_positions=traffic_pos,
+            police_positions=env.police_positions,
+            cctv_cells=env.cctv_cells,
+            title=f'Demo Ep {ep}  |  {info_str}',
+            pause=pause,
+        )
+    elif stage == 5:
         traffic_pos = [car.pos for car in env.traffic_cars]
         show_fn(
             env.render(), env.goal,
@@ -336,8 +354,117 @@ def run_demo_stage4(thief_ckpt, police0_ckpt, police1_ckpt,
 
 
 # ══════════════════════════════════════════════════════════
-#  Helpers
+#  Stage 5 demo (adversarial: trained thief + 2 trained police)
 # ══════════════════════════════════════════════════════════
+
+def run_demo_stage5(thief_ckpt, police0_ckpt, police1_ckpt,
+                    episodes, seed, pause, grid_size, max_steps):
+
+    if seed is not None:
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+
+    print(f"\n{'=' * 55}")
+    print(f"  DEMO  —  Stage 5 (Adversarial)")
+    print(f"{'=' * 55}")
+    print(f"  Thief ckpt:    {thief_ckpt}")
+    print(f"  Police 0 ckpt: {police0_ckpt}")
+    print(f"  Police 1 ckpt: {police1_ckpt}")
+    print(f"  Episodes:      {episodes}")
+    print(f"  Pause:         {pause}s per frame")
+    print()
+
+    # Create environment (no frozen policy needed)
+    env = make_env(5, grid_size=grid_size, max_steps=max_steps)
+    print(f"  Thief obs dim:  {env.THIEF_OBS_DIM}")
+    print(f"  Police obs dim: {env.POLICE_OBS_DIM}")
+    print(f"  CCTV cells:     {sorted(env.cctv_cells)}")
+
+    # Load thief
+    thief_agent = PPOAgent(env.THIEF_OBS_DIM, 5)
+    thief_agent.policy = PPOPolicy(env.THIEF_OBS_DIM, 5, hidden=128)
+    ckpt = torch.load(thief_ckpt, weights_only=True)
+    thief_agent.policy.load_state_dict(ckpt["policy_state"])
+    thief_agent.policy.eval()
+    print(f"  ✓ Loaded thief")
+
+    # Load 2 police
+    police_agents = []
+    for i, ckpt_path in enumerate([police0_ckpt, police1_ckpt]):
+        agent = PPOAgent(env.POLICE_OBS_DIM, 5)
+        agent.policy = PPOPolicy(env.POLICE_OBS_DIM, 5, hidden=256)
+        ckpt = torch.load(ckpt_path, weights_only=True)
+        agent.policy.load_state_dict(ckpt["policy_state"])
+        agent.policy.eval()
+        police_agents.append(agent)
+        print(f"  ✓ Loaded police {i}")
+
+    print()
+    show_fn, reset_fn = get_show_fn(5)
+
+    stats = []
+    for ep in range(1, episodes + 1):
+        thief_obs, police_obs = env.reset()
+        done = False
+        path = [env.agent_pos]
+        thief_ep_reward = 0.0
+
+        while not done:
+            # Thief greedy
+            t_state = torch.tensor(thief_obs, dtype=torch.float32).unsqueeze(0)
+            with torch.no_grad():
+                t_logits, _ = thief_agent.policy(t_state)
+            thief_action = t_logits.argmax(dim=-1).item()
+
+            # Police greedy
+            police_actions = []
+            for i, agent in enumerate(police_agents):
+                p_state = torch.tensor(
+                    police_obs[i], dtype=torch.float32
+                ).unsqueeze(0)
+                with torch.no_grad():
+                    p_logits, _ = agent.policy(p_state)
+                police_actions.append(p_logits.argmax(dim=-1).item())
+
+            (thief_obs, thief_reward,
+             police_obs, police_rewards, done) = env.step(thief_action, police_actions)
+            thief_ep_reward += thief_reward
+            path.append(env.agent_pos)
+
+            cctv_str = "CCTV!" if env.last_cctv_sighting is not None else ""
+            info = f'Step {env.steps}  |  R={thief_ep_reward:.0f}  |  {cctv_str}'
+            render_frame(5, env, show_fn, path, ep, info, pause)
+
+        # Determine outcome
+        if env.caught_by_police:
+            outcome = f"✗ CAUGHT by Police {env.catcher_idx}"
+        elif env.thief_reached_goal:
+            outcome = "✓ THIEF ESCAPED"
+        elif env.trap_hits > 0:
+            outcome = "✗ THIEF TRAP DEATH"
+        else:
+            outcome = "✗ TIMEOUT"
+
+        had_cctv = "Yes" if env.last_cctv_sighting is not None else "No"
+        print(
+            f"  Episode {ep}/{episodes}  |  "
+            f"{outcome:26s}  |  "
+            f"Steps={env.steps:3d}  |  "
+            f"Reward={thief_ep_reward:7.1f}  |  "
+            f"CCTV={had_cctv}"
+        )
+        stats.append(dict(
+            reached=env.thief_reached_goal,
+            steps=env.steps,
+            reward=thief_ep_reward,
+            caught=env.caught_by_police,
+            trap_death=env.trap_hits > 0,
+        ))
+        reset_fn()
+        time.sleep(0.5)
+
+    _print_summary(stats)
+    _keep_window_open()
 
 def _print_summary(stats):
     n = len(stats)
@@ -376,18 +503,21 @@ Examples:
   Stage 4:  python demo.py --stage 4 --thief-ckpt checkpoints/stage3_final.pt \\
                 --police0-ckpt checkpoints/stage4_police0_final.pt \\
                 --police1-ckpt checkpoints/stage4_police1_final.pt
+  Stage 5:  python demo.py --stage 5 --thief-ckpt checkpoints/stage5_thief_final.pt \\
+                --police0-ckpt checkpoints/stage5_police0_final.pt \\
+                --police1-ckpt checkpoints/stage5_police1_final.pt
         """,
     )
     parser.add_argument("--stage", type=int, default=DEFAULTS["stage"],
-                        help="Stage number (1, 2, 3, or 4)")
+                        help="Stage number (1, 2, 3, 4, or 5)")
     parser.add_argument("--checkpoint", type=str, default=DEFAULTS["checkpoint"],
                         help="Checkpoint path (stages 1-3)")
     parser.add_argument("--thief-ckpt", type=str, default=DEFAULTS["thief_ckpt"],
-                        help="Thief checkpoint (stage 4)")
+                        help="Thief checkpoint (stages 4-5)")
     parser.add_argument("--police0-ckpt", type=str, default=DEFAULTS["police0_ckpt"],
-                        help="Police 0 checkpoint (stage 4)")
+                        help="Police 0 checkpoint (stages 4-5)")
     parser.add_argument("--police1-ckpt", type=str, default=DEFAULTS["police1_ckpt"],
-                        help="Police 1 checkpoint (stage 4)")
+                        help="Police 1 checkpoint (stages 4-5)")
     parser.add_argument("--episodes", type=int, default=DEFAULTS["episodes"])
     parser.add_argument("--seed", type=int, default=DEFAULTS["seed"])
     parser.add_argument("--pause", type=float, default=DEFAULTS["pause"])
@@ -408,23 +538,32 @@ Examples:
             grid_size=args.grid_size,
             max_steps=args.max_steps,
         )
-    elif args.stage == 4:
+    elif args.stage in (4, 5):
         for label, path in [("Thief", args.thief_ckpt),
                             ("Police 0", args.police0_ckpt),
                             ("Police 1", args.police1_ckpt)]:
             if not os.path.exists(path):
                 print(f"ERROR: {label} checkpoint not found: {path}")
                 sys.exit(1)
-        run_demo_stage4(
-            thief_ckpt=args.thief_ckpt,
-            police0_ckpt=args.police0_ckpt,
-            police1_ckpt=args.police1_ckpt,
-            episodes=args.episodes,
-            seed=args.seed,
-            pause=args.pause,
-            grid_size=args.grid_size,
-            max_steps=args.max_steps,
-        )
-    else:
-        print(f"ERROR: Unknown stage {args.stage}")
-        sys.exit(1)
+        if args.stage == 4:
+            run_demo_stage4(
+                thief_ckpt=args.thief_ckpt,
+                police0_ckpt=args.police0_ckpt,
+                police1_ckpt=args.police1_ckpt,
+                episodes=args.episodes,
+                seed=args.seed,
+                pause=args.pause,
+                grid_size=args.grid_size,
+                max_steps=args.max_steps,
+            )
+        else:
+            run_demo_stage5(
+                thief_ckpt=args.thief_ckpt,
+                police0_ckpt=args.police0_ckpt,
+                police1_ckpt=args.police1_ckpt,
+                episodes=args.episodes,
+                seed=args.seed,
+                pause=args.pause,
+                grid_size=args.grid_size,
+                max_steps=args.max_steps,
+            )
