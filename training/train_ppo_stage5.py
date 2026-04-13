@@ -42,12 +42,12 @@ THIEF_CHECKPOINT = "checkpoints/stage3_final.pt"
 POLICE0_CHECKPOINT = "checkpoints/stage4_police0_final.pt"
 POLICE1_CHECKPOINT = "checkpoints/stage4_police1_final.pt"
 
-TOTAL_EPISODES = 200000
+TOTAL_EPISODES = 400000
 
 EVAL_EVERY = 5000
 EVAL_EPISODES = 5
 LOG_EVERY = 5000
-SAVE_EVERY = 50000
+SAVE_EVERY = 25000
 
 GUI = False
 RENDER_EVERY = 50
