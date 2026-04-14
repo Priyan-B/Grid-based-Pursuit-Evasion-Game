@@ -58,19 +58,19 @@ Each stage loads the previous stage's checkpoint. Run from the project root:
 
 ```bash
 # Stage 1: Thief learns basic navigation
-python training/train_ppo.py
+python3 training/train_ppo.py
 
 # Stage 2: Thief learns trap avoidance + traffic dodging
-python training/train_ppo_stage2.py
+python3 training/train_ppo_stage2.py
 
 # Stage 3: Thief learns to evade random police (CCTV collects data silently)
-python training/train_ppo_stage3.py
+python3 training/train_ppo_stage3.py
 
 # Stage 4: Police learn to catch the frozen thief using CCTV + local vision
-python training/train_ppo_stage4.py
+python3 training/train_ppo_stage4.py
 
 # Stage 5: Both sides train simultaneously — adversarial co-training
-python training/train_ppo_stage5.py
+python3 training/train_ppo_stage5.py
 ```
 
 Checkpoints are saved to `training/checkpoints/`. Training logs are saved to `training/logs/`.
@@ -96,22 +96,22 @@ The demo loads trained checkpoints and runs visual episodes with full GUI. No tr
 
 ```bash
 # Stage 1: Basic navigation
-python utils/demo.py --stage 1 --checkpoint training/checkpoints/ppo_final.pt
+python3 utils/demo.py --stage 1 --checkpoint training/checkpoints/ppo_final.pt
 
 # Stage 2: Traps + traffic avoidance
-python utils/demo.py --stage 2 --checkpoint training/checkpoints/stage2_phaseB_final.pt
+python3 utils/demo.py --stage 2 --checkpoint training/checkpoints/stage2_phaseB_final.pt
 
 # Stage 3: Evading random police
-python utils/demo.py --stage 3 --checkpoint training/checkpoints/stage3_final.pt
+python3 utils/demo.py --stage 3 --checkpoint training/checkpoints/stage3_final.pt
 
 # Stage 4: Trained police vs frozen thief
-python utils/demo.py --stage 4 \
+python3 utils/demo.py --stage 4 \
     --thief-ckpt training/checkpoints/stage3_final.pt \
     --police0-ckpt training/checkpoints/stage4_police0_final.pt \
     --police1-ckpt training/checkpoints/stage4_police1_final.pt
 
 # Stage 5: Adversarial — both sides trained
-python utils/demo.py --stage 5 \
+python3 utils/demo.py --stage 5 \
     --thief-ckpt training/checkpoints/stage5_thief_final.pt \
     --police0-ckpt training/checkpoints/stage5_police0_final.pt \
     --police1-ckpt training/checkpoints/stage5_police1_final.pt
@@ -124,11 +124,11 @@ Options: `--episodes 10`, `--pause 0.1` (slower playback), `--seed 42` (reproduc
 ## Plotting Results
 
 ```bash
-python training/plot_logs.py              # Stage 1 curves
-python training/plot_logs_stage2.py       # Stage 2 curves
-python training/plot_logs_stage3.py       # Stage 3 curves
-python training/plot_logs_stage4.py       # Stage 4 police curves
-python training/plot_logs_stage5.py       # Stage 5 adversarial dynamics
+python3 training/plot_logs.py              # Stage 1 curves
+python3 training/plot_logs_stage2.py       # Stage 2 curves
+python3 training/plot_logs_stage3.py       # Stage 3 curves
+python3 training/plot_logs_stage4.py       # Stage 4 police curves
+python3 training/plot_logs_stage5.py       # Stage 5 adversarial dynamics
 ```
 
 Plots are saved as PNGs in `training/logs/`.
