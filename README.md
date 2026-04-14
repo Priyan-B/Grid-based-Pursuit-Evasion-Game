@@ -2,6 +2,9 @@
 
 A multi-stage reinforcement learning project where a thief agent learns to navigate a 15×15 city grid, avoid traps and traffic, and evade police agents that learn to intercept using CCTV surveillance. Both sides are trained using PPO and evolve through 5 stages, culminating in simultaneous adversarial co-training.
 
+# Final Report:
+**[Link to FAI Final Paper.pdf](FAI%20Final%20Paper.pdf)**
+
 ---
 
 ## Project Structure
